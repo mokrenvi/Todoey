@@ -11,9 +11,14 @@ import UIKit
 class toDoListViewController: UITableViewController {
     
     var itemArray = ["Find Mike", "Buy Eggos", "Destroy Demorogon"]
+    let defaults = UserDefaults.standard  //allows app data to persist after app termination
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        if let items = defaults.array(forKey: "to do list array") as? [String] // reload this
+        {
+            itemsArray = items
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -52,6 +57,8 @@ class toDoListViewController: UITableViewController {
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             //what happens when user clicks action button on alert
             self.itemArray.append(textField.text!)
+            self.defaults.set(self.itemArray, forKey: "to do list array")  // now data is created in a plist file so you can retrieve saved item with a key
+            
             self.tableView.reloadData()  //this resets and reloads taking into account the new array
             //now show alert
           }
