@@ -11,11 +11,13 @@ import UIKit
 class toDoListViewController: UITableViewController {
     
     var itemArray = [Item]()
-    let defaults = UserDefaults.standard  //allows app data to persist after app termination
+     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")  //can call it anything
+    //let defaults = UserDefaults.standard  //allows app data to persist after app termination
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         let newItem = Item()
+        
         newItem.title = "Find Mike"
         itemArray.append(newItem)
         let newItem2 = Item()
@@ -28,6 +30,7 @@ class toDoListViewController: UITableViewController {
 //        {
 //            itemsArray = items
 //        }
+        loadItems()
     }
 
     override func didReceiveMemoryWarning() {
@@ -52,9 +55,9 @@ class toDoListViewController: UITableViewController {
     }
     //tells which row has selected by indexPath.row
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done  //wanna save this
        
-        tableView.reloadData()
+        saveItems()
         
         tableView.deselectRow(at: indexPath, animated: true)
     }
@@ -69,20 +72,39 @@ class toDoListViewController: UITableViewController {
             let newItem = Item()
             newItem.title = textField.text!
             self.itemArray.append(newItem)
-            self.defaults.set(self.itemArray, forKey: "to do list array")  // now data is created in a plist file so you can retrieve saved item with a key
-            
-            self.tableView.reloadData()  //this resets and reloads taking into account the new array
-            //now show alert
-          }
+            //self.defaults.set(self.itemArray, forKey: "to do list array")  // now data is created in a plist file so you can retrieve saved item with a key
+            self.saveItems()
+        }
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Create new item"
             textField = alertTextField
         }
         alert.addAction(action)
-        present(alert, animated: true, completion: nil)
+        self.present(alert, animated: true, completion: nil)
         
+   
+
     }
-    
-    
+    func saveItems() {
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print(error)
+        }
+        tableView.reloadData()  //this resets and reloads taking into account the new array
+        //now show alert
+    }
+    func loadItems() {
+        
+        do {
+        let data = try Data(contentsOf: dataFilePath!)
+        let decoder = PropertyListDecoder()
+        itemArray = try decoder.decode([Item].self, from: data)
+        } catch {
+            print(error)
+        }
+    }
 }
 
