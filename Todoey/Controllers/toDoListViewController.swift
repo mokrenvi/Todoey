@@ -12,6 +12,12 @@ import CoreData
 class toDoListViewController: UITableViewController{
     
     var itemArray = [Item]()
+    //selected category to load up all relevant items
+    var selectedCategory : Category? {
+        didSet {  //as soon as the category is set, load items
+            loadItems()
+        }
+    }
      //let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")  //can call it anything
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext //can create the context this way
     //let defaults = UserDefaults.standard  //allows app data to persist after app termination
@@ -66,6 +72,7 @@ class toDoListViewController: UITableViewController{
             let newItem = Item(context: self.context)
             newItem.title = textField.text!
             newItem.done = false
+            newItem.parentCategory = self.selectedCategory
             self.itemArray.append(newItem)
             //self.defaults.set(self.itemArray, forKey: "to do list array")  // now data is created in a plist file so you can retrieve saved item with a key
             self.saveItems()
@@ -103,8 +110,15 @@ class toDoListViewController: UITableViewController{
 //        }
 //    }
     //sets a default value to request if no parameters are given
-    func loadItems(with request : NSFetchRequest<Item> = Item.fetchRequest()) {  //reading from coredata
+    func loadItems(with request : NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) {  //reading from coredata
         //let request : NSFetchRequest<Item> = Item.fetchRequest()
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        if let additionalPredicate = predicate {
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+        } else {
+            request.predicate = categoryPredicate
+        }
+        
         do {
             itemArray = try context.fetch(request)
         } catch {
@@ -129,7 +143,7 @@ extension toDoListViewController : UISearchBarDelegate {
         request.predicate = predicate
         let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
         request.sortDescriptors = [sortDescriptor]
-        loadItems(with: request)
+        loadItems(with: request, predicate: predicate)
     }
     //only triggered when search bar is cleared
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {

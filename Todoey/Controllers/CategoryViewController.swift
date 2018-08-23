@@ -49,7 +49,16 @@ class CategoryViewController: UITableViewController {
     
     
     //MarK: - Tableview delegate method (save and load data from core data)
-    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        performSegue(withIdentifier: "goToItems", sender: self)
+        
+    }
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let destinationVC = segue.destination as! toDoListViewController
+        if let indexPath = tableView.indexPathForSelectedRow {
+            destinationVC.selectedCategory = categories[indexPath.row]
+        }
+    }
     //Mark: - Data manipulation (add new categories)
     func saveCategories() {
         do {
