@@ -7,30 +7,23 @@
 //
 
 import UIKit
+import CoreData
 
 class toDoListViewController: UITableViewController {
     
     var itemArray = [Item]()
-     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")  //can call it anything
+     //let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")  //can call it anything
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext //can create the context this way
     //let defaults = UserDefaults.standard  //allows app data to persist after app termination
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        let newItem = Item()
-        
-        newItem.title = "Find Mike"
-        itemArray.append(newItem)
-        let newItem2 = Item()
-        newItem2.title = "Save Mike"
-        itemArray.append(newItem2)
-        let newItem3 = Item()
-        newItem3.title = "Buy Mike a bear"
-        itemArray.append(newItem3)
+       print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         //        if let items = defaults.array(forKey: "to do list array") as? [String] // reload this
 //        {
 //            itemsArray = items
 //        }
-        loadItems()
+       loadItems()
     }
 
     override func didReceiveMemoryWarning() {
@@ -69,8 +62,10 @@ class toDoListViewController: UITableViewController {
         let alert = UIAlertController(title: "Add new Todoey item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             //what happens when user clicks action button on alert
-            let newItem = Item()
+            
+            let newItem = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done = false
             self.itemArray.append(newItem)
             //self.defaults.set(self.itemArray, forKey: "to do list array")  // now data is created in a plist file so you can retrieve saved item with a key
             self.saveItems()
@@ -86,25 +81,41 @@ class toDoListViewController: UITableViewController {
 
     }
     func saveItems() {
-        let encoder = PropertyListEncoder()
+        //let encoder = PropertyListEncoder()
         do {
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+            //let data = try encoder.encode(itemArray)
+            //try data.write(to: dataFilePath!)
+            try context.save()
         } catch {
-            print(error)
+            print("Error saving context \(error)")
         }
         tableView.reloadData()  //this resets and reloads taking into account the new array
         //now show alert
     }
-    func loadItems() {
-        
+//    func loadItems() {
+//
+//        do {
+//        let data = try Data(contentsOf: dataFilePath!)
+//        let decoder = PropertyListDecoder()
+//        itemArray = try decoder.decode([Item].self, from: data)
+//        } catch {
+//            print(error)
+//        }
+//    }
+    func loadItems() {  //reading from coredata
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
         do {
-        let data = try Data(contentsOf: dataFilePath!)
-        let decoder = PropertyListDecoder()
-        itemArray = try decoder.decode([Item].self, from: data)
+            itemArray = try context.fetch(request)
         } catch {
-            print(error)
+            print("Error retrieving data \(error)")
         }
+    }
+    
+    //Deleting in CoreData
+    func delete(indexPath : IndexPath) {
+        context.delete(itemArray[indexPath.row])
+        itemArray.remove(at: indexPath.row)
+        saveItems()
     }
 }
 
