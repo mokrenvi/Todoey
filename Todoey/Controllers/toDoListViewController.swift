@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-class toDoListViewController: UITableViewController {
+class toDoListViewController: UITableViewController{
     
     var itemArray = [Item]()
      //let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")  //can call it anything
@@ -102,13 +102,15 @@ class toDoListViewController: UITableViewController {
 //            print(error)
 //        }
 //    }
-    func loadItems() {  //reading from coredata
-        let request : NSFetchRequest<Item> = Item.fetchRequest()
+    //sets a default value to request if no parameters are given
+    func loadItems(with request : NSFetchRequest<Item> = Item.fetchRequest()) {  //reading from coredata
+        //let request : NSFetchRequest<Item> = Item.fetchRequest()
         do {
             itemArray = try context.fetch(request)
         } catch {
             print("Error retrieving data \(error)")
         }
+        tableView.reloadData()
     }
     
     //Deleting in CoreData
@@ -116,6 +118,28 @@ class toDoListViewController: UITableViewController {
         context.delete(itemArray[indexPath.row])
         itemArray.remove(at: indexPath.row)
         saveItems()
+    }
+    
+}
+//MARK: - Search bar methods
+extension toDoListViewController : UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        let request : NSFetchRequest<Item> = Item.fetchRequest() //read from database
+        let predicate = NSPredicate(format: "title CONTAINS %@", searchBar.text!)
+        request.predicate = predicate
+        let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
+        request.sortDescriptors = [sortDescriptor]
+        loadItems(with: request)
+    }
+    //only triggered when search bar is cleared
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+           loadItems()
+            DispatchQueue.main.async {  //puts this in the foreground
+              searchBar.resignFirstResponder()  //notifies search bar to resign status (no longer selected)
+            }
+
+        }
     }
 }
 
